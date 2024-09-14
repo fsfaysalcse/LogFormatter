@@ -1,67 +1,86 @@
 class LogTableFormatter {
 
-    fun printTable(header: List<String>, rows: List<List<Any>>) {
+    fun formatTable(header: List<String>, rows: List<List<Any>>): String {
         val columnWidths = calculateColumnWidths(header, rows)
+        val stringBuilder = StringBuilder()
 
-        printSeparator(columnWidths)
-        printRow(header, columnWidths)
-        printSeparator(columnWidths)
+        stringBuilder.append(formatSeparator(columnWidths))
+        stringBuilder.append(formatRow(header, columnWidths))
+        stringBuilder.append(formatSeparator(columnWidths))
 
         rows.forEach { row ->
-            printRow(row, columnWidths)
-            printSeparator(columnWidths)
+            stringBuilder.append(formatRow(row, columnWidths))
+            stringBuilder.append(formatSeparator(columnWidths))
         }
+
+        return stringBuilder.toString()
     }
 
     private fun calculateColumnWidths(header: List<String>, rows: List<List<Any>>): List<Int> {
         return header.indices.map { index ->
             maxOf(
                 header[index].length,
-                rows.maxOfOrNull { row -> row[index].toString().length } ?: 0
+                rows.maxOfOrNull { row -> wrapText(row[index].toString(), Int.MAX_VALUE).maxOf { it.length } } ?: 0
             )
         }
     }
 
-    private fun printRow(row: List<Any>, columnWidths: List<Int>) {
+    private fun formatRow(row: List<Any>, columnWidths: List<Int>): String {
         val wrappedRows = row.mapIndexed { index, cell -> wrapText(cell.toString(), columnWidths[index]) }
         val maxLines = wrappedRows.maxOf { it.size }
+        val stringBuilder = StringBuilder()
 
         for (i in 0 until maxLines) {
-            print("|")
+            stringBuilder.append("|")
             row.indices.forEach { index ->
-                val cellLine = wrappedRows[index].getOrElse(i) { "" }
-                print(" ${cellLine.padEnd(columnWidths[index])} |")
+                val cellLines = wrappedRows[index]
+                val cellLine = cellLines.getOrElse(i) { "" }
+                stringBuilder.append(" ${cellLine.padEnd(columnWidths[index])} |")
             }
-            println()
+            stringBuilder.appendLine()
         }
+
+        return stringBuilder.toString()
     }
 
-    private fun printSeparator(columnWidths: List<Int>) {
-        print("+")
+    private fun formatSeparator(columnWidths: List<Int>): String {
+        val stringBuilder = StringBuilder()
+        stringBuilder.append("+")
         columnWidths.forEachIndexed { index, width ->
-            print("-".repeat(width + 2))
-            if (index != columnWidths.lastIndex) print("+")
+            stringBuilder.append("-".repeat(width + 2))
+            if (index != columnWidths.lastIndex) stringBuilder.append("+")
         }
-        println("+")
+        stringBuilder.append("+")
+        stringBuilder.appendLine()
+
+        return stringBuilder.toString()
     }
 
     private fun wrapText(text: String, maxWidth: Int): List<String> {
-        if (text.length <= maxWidth) return listOf(text)
-        val words = text.split(" ")
+        val lines = text.split("\n")
         val wrappedLines = mutableListOf<String>()
-        var currentLine = StringBuilder()
 
-        for (word in words) {
-            if (currentLine.isNotEmpty() && currentLine.length + word.length + 1 > maxWidth) {
-                wrappedLines.add(currentLine.toString())
-                currentLine = StringBuilder(word)
+        for (line in lines) {
+            if (line.length <= maxWidth) {
+                wrappedLines.add(line)
             } else {
-                if (currentLine.isNotEmpty()) currentLine.append(" ")
-                currentLine.append(word)
+                val words = line.split(" ")
+                val lineBuilder = StringBuilder()
+
+                for (word in words) {
+                    if (lineBuilder.isNotEmpty() && lineBuilder.length + word.length + 1 > maxWidth) {
+                        wrappedLines.add(lineBuilder.toString())
+                        lineBuilder.clear()
+                    }
+
+                    if (lineBuilder.isNotEmpty()) lineBuilder.append(" ")
+                    lineBuilder.append(word)
+                }
+
+                if (lineBuilder.isNotEmpty()) wrappedLines.add(lineBuilder.toString())
             }
         }
 
-        if (currentLine.isNotEmpty()) wrappedLines.add(currentLine.toString())
         return wrappedLines
     }
 }

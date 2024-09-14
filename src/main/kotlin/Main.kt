@@ -6,9 +6,9 @@ fun main() {
     val tableFormatter = LogTableFormatter()
     val header = listOf("Name", "Description", "Age")
     val data = listOf(
-        listOf("Alice", "This description is long and should wrap around in the table.", 30),
-        listOf("Bob", "Short desc", 25),
-        listOf("Charlie", "Another long description that spans multiple lines in the table.", 35)
+        listOf("Alice", "This description is long and should wrap around in the table.", "30"),
+        listOf("Bob", "Short desc", "25"),
+        listOf("Charlie", "Another long description that spans multiple lines in the table.", "hello\nWorld")
     )
     val table = tableFormatter.formatTable(header, data)
     println(table)
